@@ -10,4 +10,4 @@ Os trabalhos estão organizados por tópicos ou entregas específicas da discipl
 
 | Título | Descrição | Linguagem |
 |--------|-----------|-----------|
-|Árvore de Decisão simples|Algoritmo de árvore de decisão sem a utilização de hiper parâmetros|Python|
+|Árvore de Decisão|Algoritmo de árvore de decisão aplicado a base Titanic com relatório de análise|Python|
