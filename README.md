@@ -11,3 +11,4 @@ Os trabalhos estão organizados por tópicos ou entregas específicas da discipl
 | Título | Descrição | Linguagem |
 |--------|-----------|-----------|
 |Árvore de Decisão|Algoritmo de árvore de decisão aplicado a base Titanic|Python|
+|Algoritmo Apriori|Algoritmo de agrupamento aplicado a uma base de supermercado|Python|
