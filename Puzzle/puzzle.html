@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Puzzle</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    #puzzle {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 2px;
+      margin: 20px auto;
+      width: 306px;
+    }
+    .tile {
+      width: 100px;
+      height: 100px;
+      background-image: url('kika.png');
+      background-size: 300px 300px;
+      box-sizing: border-box;
+      border: 1px solid #999;
+      cursor: pointer;
+    }
+    .empty {
+      background: #eee;
+      border: 1px dashed #999;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    .info {
+      margin: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 5px;
+    }
+    .method-info {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      background: #e9e9e9;
+      border-radius: 5px;
+    }
+    .algorithm-controls {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f5f5f5;
+      border-radius: 5px;
+    }
+    select {
+      padding: 8px;
+      margin: 0 10px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Puzzle</h1>
+  
+  <div class="controls">
+    <button id="shuffle-btn">Embaralhar Novo</button>
+    <button id="restart-btn">Restart (Voltar ao estado inicial)</button>
+  </div>
+  
+  <div id="puzzle"></div>
+  
+  <div class="algorithm-controls">
+    <h3>Selecione o Algoritmo</h3>
+    <select id="algorithm-select">
+      <option value="">-- Selecione --</option>
+      <option value="greedy">Busca Gulosa</option>
+      <option value="uniform">Busca Uniforme</option>
+      <option value="astar">Busca A*</option>
+    </select>
+    
+    <button id="start-btn" disabled>Start</button>
+  </div>
+  
+  <div class="info">
+    <h3>Informações da Solução</h3>
+    <div id="greedy-info" class="method-info">
+      <h4>Busca Gulosa</h4>
+      <p>Movimentos: <span id="greedy-steps">0</span></p>
+      <p>Tempo: <span id="greedy-time">0</span> ms</p>
+    </div>
+    <div id="uniform-info" class="method-info">
+      <h4>Busca Uniforme</h4>
+      <p>Movimentos: <span id="uniform-steps">0</span></p>
+      <p>Tempo: <span id="uniform-time">0</span> ms</p>
+    </div>
+    <div id="astar-info" class="method-info">
+      <h4>Busca A*</h4>
+      <p>Movimentos: <span id="astar-steps">0</span></p>
+      <p>Tempo: <span id="astar-time">0</span> ms</p>
+    </div>
+  </div>
+
+  <script>
+    const goalState = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+    let puzzleState = [...goalState];
+    let initialState = [...goalState];
+    let isSolving = false;
+    let selectedAlgorithm = '';
+
+    // Elementos do DOM
+    const algorithmSelect = document.getElementById('algorithm-select');
+    const startBtn = document.getElementById('start-btn');
+
+    // Função para verificar se o puzzle é solucionável
+    function isSolvable(state) {
+      let inversions = 0;
+      for (let i = 0; i < state.length; i++) {
+        for (let j = i + 1; j < state.length; j++) {
+          if (state[i] !== 0 && state[j] !== 0 && state[i] > state[j]) {
+            inversions++;
+          }
+        }
+      }
+      return inversions % 2 === 0;
+    }
+
+    // Embaralha o puzzle garantindo que seja solucionável
+    function shuffle(arr) {
+      do {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      } while (!isSolvable(arr) || JSON.stringify(arr) === JSON.stringify(goalState));
+      return arr;
+    }
+
+    // Renderiza o puzzle
+    function renderPuzzle(state) {
+      const puzzle = document.getElementById("puzzle");
+      puzzle.innerHTML = "";
+      state.forEach((num, idx) => {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        if (num === 0) {
+          tile.classList.add("empty");
+          tile.textContent = "";
+        } else {
+          const row = Math.floor((num - 1) / 3);
+          const col = (num - 1) % 3;
+          tile.style.backgroundPosition = `-${col * 100}px -${row * 100}px`;
+          tile.textContent = num;
+        }
+        
+        tile.addEventListener("click", () => {
+          if (!isSolving) moveTile(idx);
+        });
+        
+        puzzle.appendChild(tile);
+      });
+    }
+
+    // Move uma peça se possível
+    function moveTile(index) {
+      const emptyIndex = puzzleState.indexOf(0);
+      const row = Math.floor(index / 3);
+      const col = index % 3;
+      const emptyRow = Math.floor(emptyIndex / 3);
+      const emptyCol = emptyIndex % 3;
+      
+      if ((row === emptyRow && Math.abs(col - emptyCol) === 1) ||
+          (col === emptyCol && Math.abs(row - emptyRow) === 1)) {
+        const newState = [...puzzleState];
+        [newState[index], newState[emptyIndex]] = [newState[emptyIndex], newState[index]];
+        puzzleState = newState;
+        renderPuzzle(puzzleState);
+      }
+    }
+
+    // Distância de Manhattan
+    function manhattanDistance(state) {
+      let dist = 0;
+      for (let i = 0; i < state.length; i++) {
+        if (state[i] !== 0) {
+          const goalIndex = goalState.indexOf(state[i]);
+          dist += Math.abs(Math.floor(i / 3) - Math.floor(goalIndex / 3)) +
+                  Math.abs(i % 3 - goalIndex % 3);
+        }
+      }
+      return dist;
+    }
+
+    // Obtém os vizinhos possíveis
+    function getNeighbors(state) {
+      const neighbors = [];
+      const index = state.indexOf(0);
+      const moves = [-1, 1, -3, 3]; // esquerda, direita, cima, baixo
+      
+      for (let move of moves) {
+        const newIndex = index + move;
+        if (newIndex >= 0 && newIndex < 9 &&
+            !(move === -1 && index % 3 === 0) &&
+            !(move === 1 && index % 3 === 2)) {
+          const newState = [...state];
+          [newState[index], newState[newIndex]] = [newState[newIndex], newState[index]];
+          neighbors.push(newState);
+        }
+      }
+      return neighbors;
+    }
+
+    // Busca de custo uniforme (implementação independente)
+    function uniformCostSearch(start) {
+      const startTime = performance.now();
+      const visited = new Set();
+      const queue = [{ state: start, path: [], cost: 0, steps: 0 }];
+      
+      while (queue.length > 0) {
+        queue.sort((a, b) => a.cost - b.cost);
+        const current = queue.shift();
+        
+        if (JSON.stringify(current.state) === JSON.stringify(goalState)) {
+          const endTime = performance.now();
+          return {
+            solution: current.path,
+            steps: current.steps,
+            time: endTime - startTime
+          };
+        }
+        
+        const currentStateStr = JSON.stringify(current.state);
+        if (!visited.has(currentStateStr)) {
+          visited.add(currentStateStr);
+          
+          getNeighbors(current.state).forEach(neighbor => {
+            const neighborStr = JSON.stringify(neighbor);
+            if (!visited.has(neighborStr)) {
+              queue.push({
+                state: neighbor,
+                path: [...current.path, neighbor],
+                cost: current.cost + 1,
+                steps: current.steps + 1
+              });
+            }
+          });
+        }
+      }
+      const endTime = performance.now();
+      return {
+        solution: [],
+        steps: 0,
+        time: endTime - startTime
+      };
+    }
+
+    // Busca gulosa
+    function greedySearch(start) {
+      const startTime = performance.now();
+      const visited = new Set();
+      const queue = [{ state: start, path: [], steps: 0 }];
+      
+      while (queue.length > 0) {
+        queue.sort((a, b) => manhattanDistance(a.state) - manhattanDistance(b.state));
+        const current = queue.shift();
+        
+        if (JSON.stringify(current.state) === JSON.stringify(goalState)) {
+          const endTime = performance.now();
+          return {
+            solution: current.path,
+            steps: current.steps,
+            time: endTime - startTime
+          };
+        }
+        
+        const currentStateStr = JSON.stringify(current.state);
+        if (!visited.has(currentStateStr)) {
+          visited.add(currentStateStr);
+          
+          getNeighbors(current.state).forEach(neighbor => {
+            const neighborStr = JSON.stringify(neighbor);
+            if (!visited.has(neighborStr)) {
+              queue.push({ 
+                state: neighbor, 
+                path: [...current.path, neighbor],
+                steps: current.steps + 1
+              });
+            }
+          });
+        }
+      }
+      const endTime = performance.now();
+      return {
+        solution: [],
+        steps: 0,
+        time: endTime - startTime
+      };
+    }
+
+    // Busca A*
+    function aStarSearch(start) {
+      const startTime = performance.now();
+      const visited = new Set();
+      const queue = [{ state: start, path: [], cost: 0, steps: 0 }];
+      
+      while (queue.length > 0) {
+        queue.sort((a, b) =>
+          (a.cost + manhattanDistance(a.state)) - (b.cost + manhattanDistance(b.state))
+        );
+        const current = queue.shift();
+        
+        if (JSON.stringify(current.state) === JSON.stringify(goalState)) {
+          const endTime = performance.now();
+          return {
+            solution: current.path,
+            steps: current.steps,
+            time: endTime - startTime
+          };
+        }
+        
+        const currentStateStr = JSON.stringify(current.state);
+        if (!visited.has(currentStateStr)) {
+          visited.add(currentStateStr);
+          
+          getNeighbors(current.state).forEach(neighbor => {
+            const neighborStr = JSON.stringify(neighbor);
+            if (!visited.has(neighborStr)) {
+              queue.push({
+                state: neighbor,
+                path: [...current.path, neighbor],
+                cost: current.cost + 1,
+                steps: current.steps + 1
+              });
+            }
+          });
+        }
+      }
+      const endTime = performance.now();
+      return {
+        solution: [],
+        steps: 0,
+        time: endTime - startTime
+      };
+    }
+
+    // Anima a solução
+    function animateSolution(solution, method) {
+      if (solution.length === 0) {
+        alert(`Não foi encontrada uma solução para o método ${method} ou o puzzle já está resolvido!`);
+        isSolving = false;
+        return;
+      }
+      
+      isSolving = true;
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < solution.length) {
+          puzzleState = solution[i];
+          renderPuzzle(puzzleState);
+          i++;
+        } else {
+          clearInterval(interval);
+          isSolving = false;
+        }
+      }, 500);
+    }
+
+    // Mostra informações da solução
+    function showSolutionInfo(method, steps, time) {
+      const methodInfo = document.getElementById(`${method}-info`);
+      document.getElementById(`${method}-steps`).textContent = steps;
+      document.getElementById(`${method}-time`).textContent = time.toFixed(2);
+      methodInfo.style.display = 'block';
+    }
+
+    // Executa o algoritmo selecionado
+    function runSelectedAlgorithm() {
+      if (isSolving || !selectedAlgorithm) return;
+      
+      // Esconde todas as informações antes de mostrar novas
+      document.querySelectorAll('.method-info').forEach(el => {
+        el.style.display = 'none';
+      });
+      
+      let result;
+      
+      switch (selectedAlgorithm) {
+        case 'greedy':
+          result = greedySearch(initialState);
+          animateSolution(result.solution, 'Busca Gulosa');
+          showSolutionInfo('greedy', result.steps, result.time);
+          break;
+        case 'uniform':
+          result = uniformCostSearch(initialState);
+          animateSolution(result.solution, 'Busca Uniforme');
+          showSolutionInfo('uniform', result.steps, result.time);
+          break;
+        case 'astar':
+          result = aStarSearch(initialState);
+          animateSolution(result.solution, 'Busca A*');
+          showSolutionInfo('astar', result.steps, result.time);
+          break;
+      }
+    }
+
+    // Event listeners
+    algorithmSelect.addEventListener('change', (e) => {
+      selectedAlgorithm = e.target.value;
+      startBtn.disabled = !selectedAlgorithm;
+    });
+
+    startBtn.addEventListener('click', runSelectedAlgorithm);
+
+    document.getElementById('shuffle-btn').addEventListener('click', () => {
+      if (!isSolving) {
+        puzzleState = shuffle([...goalState]);
+        initialState = [...puzzleState];
+        renderPuzzle(puzzleState);
+        
+        // Esconde as informações ao embaralhar
+        document.querySelectorAll('.method-info').forEach(el => {
+          el.style.display = 'none';
+        });
+        
+        // Deseleciona o algoritmo ao embaralhar
+        algorithmSelect.value = '';
+        selectedAlgorithm = '';
+        startBtn.disabled = true;
+      }
+    });
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      if (!isSolving) {
+        puzzleState = [...initialState];
+        renderPuzzle(puzzleState);
+      }
+    });
+
+    // Inicializa o puzzle
+    puzzleState = shuffle([...goalState]);
+    initialState = [...puzzleState];
+    renderPuzzle(puzzleState);
+  </script>
+</body>
+</html>
