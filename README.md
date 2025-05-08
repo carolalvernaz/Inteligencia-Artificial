@@ -12,4 +12,4 @@ Os trabalhos estão organizados por tópicos ou entregas específicas da discipl
 |--------|-----------|-----------|
 |Árvore de Decisão|Algoritmo de árvore de decisão aplicado a base Titanic|Python|
 |Algoritmo Apriori|Algoritmo de agrupamento aplicado a uma base de supermercado|Python|
-|Puzzle|Implementação de um quebra-cabeça 8-puzzle que utiliza os algoritmos de buscas gulosa, uniforme e A* para encontrar a solução e relatório com a descrição dos métodos e dos resultados comparativos|HTML|
+|Puzzle|Implementação de um quebra-cabeça 8-puzzle que utiliza os algoritmos de buscas gulosa, uniforme e A* para encontrar a solução e relatório com a descrição dos métodos e dos resultados comparativos|Python|
