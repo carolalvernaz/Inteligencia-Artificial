@@ -19,5 +19,5 @@ Os trabalhos estão organizados por tópicos ou entregas específicas da discipl
 | Convolutional Neural Network (CNN) | Rede neural convolucional aplicada à classificação de imagens, com relatório e resultados.                  | Python    |
 
 
-👩‍💻 Desenvolvido por [Carol Alvernaz](https://github.com/carolalvernaz)  
+👩‍💻 Desenvolvido por [Caroline Alvernaz](https://github.com/carolalvernaz)  
 🎓 PUC Minas – Ciência da Computação – Inteligência Artificial
